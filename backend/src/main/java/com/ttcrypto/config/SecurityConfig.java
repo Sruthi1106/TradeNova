@@ -62,6 +62,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                     .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
                     .requestMatchers("/ws/**").permitAll()
+                    .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                     .requestMatchers("/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated())
             .authenticationProvider(authenticationProvider())
