@@ -1,23 +1,20 @@
-# Backend Dockerfile
-FROM openjdk:17-jdk-alpine
+# Backend Dockerfile (Render)
+# Stage 1: build
+FROM maven:3.9.9-eclipse-temurin-17 AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-# Copy pom.xml and download dependencies
 COPY pom.xml .
-RUN apk add --no-cache maven && mvn dependency:go-offline
-
-# Copy source code
 COPY src ./src
 
-# Build application
 RUN mvn clean package -DskipTests
 
-# Run stage
-FROM openjdk:17-jdk-alpine
+# Stage 2: runtime
+FROM eclipse-temurin:17-jre-jammy
+
 WORKDIR /app
 
-COPY --from=0 /app/target/ttcrypto-trading-platform-1.0.0.jar app.jar
+COPY --from=builder /build/target/*.jar app.jar
 
 EXPOSE 8080
 
