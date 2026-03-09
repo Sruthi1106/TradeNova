@@ -20,9 +20,13 @@ if (-not $docker) {
 }
 
 $composeCmd = @($docker.Source, 'compose')
-try {
-  & $docker.Source compose version | Out-Null
-} catch {
+$composeCheckOk = $true
+& $docker.Source compose version | Out-Null
+if ($LASTEXITCODE -ne 0) {
+  $composeCheckOk = $false
+}
+
+if (-not $composeCheckOk) {
   $composePath = "C:\Program Files\Docker\Docker\resources\bin\docker-compose.exe"
   if (-not (Test-Path $composePath)) {
     $composePath = "C:\Program Files\Docker\Docker\resources\bin\docker-compose"
