@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  @apply box-border;
+}
+
+body {
+  @apply bg-dark-900 text-white font-sans;
+}
+
+#root {
+  @apply min-h-screen;
+}
+
+.card {
+  @apply bg-dark-800 rounded-xl border border-dark-600/50 p-6 shadow-lg;
+}
+
+.btn-primary {
+  @apply bg-accent text-black font-semibold py-2.5 px-5 rounded-full transition-all duration-300 hover:bg-blue-400;
+}
+
+.btn-secondary {
+  @apply bg-transparent border border-accent/40 text-accent font-semibold py-2.5 px-5 rounded-full transition-all duration-300 hover:bg-accent/10;
+}
+
+.btn-success {
+  @apply bg-success text-white font-semibold py-2.5 px-5 rounded-lg transition-colors hover:bg-emerald-500;
+}
+
+.btn-danger {
+  @apply bg-danger text-white font-semibold py-2.5 px-5 rounded-lg transition-colors hover:bg-red-500;
+}
+
+.input-field {
+  @apply w-full bg-dark-700 text-white border border-dark-600/50 rounded-lg px-4 py-3 focus:border-gray-500/50 focus:ring-1 focus:ring-gray-500/30 outline-none transition-all placeholder:text-muted;
+}
+
+.table-row {
+  @apply border-b border-dark-600/30 hover:bg-dark-700/50 transition-colors;
+}
+
+.text-success {
+  color: #10b981;
+}
+
+.text-danger {
+  color: #ef4444;
+}
+
+.text-warning {
+  @apply text-yellow-400;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111113;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2d2d32;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

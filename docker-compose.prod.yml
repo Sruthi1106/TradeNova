@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  # Backend API Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: ttcrypto-backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.prod
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      JVM_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
+      JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF-8"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - ttcrypto-network
+
+networks:
+  ttcrypto-network:
+    driver: bridge

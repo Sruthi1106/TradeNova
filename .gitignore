@@ -1,0 +1,55 @@
+# Backend
+backend/target/
+backend/.classpath
+backend/.project
+backend/.settings/
+backend/.vscode/
+backend/bin/
+backend/*.jar
+backend/*.war
+backend/.idea/
+backend/out/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/.DS_Store
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.idea/
+frontend/out/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.prod
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Database
+*.sql
+
+# Build artifacts
+dist/
+build/
+target/

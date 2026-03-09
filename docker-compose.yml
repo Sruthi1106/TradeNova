@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ttcrypto_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: ttcrypto_db
+      MYSQL_PASSWORD: ttcrypto_password
+      MYSQL_USER: ttcrypto
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - ttcrypto_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    command: --default-authentication-plugin=mysql_native_password
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ttcrypto_backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ttcrypto_db?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ttcrypto
+      SPRING_DATASOURCE_PASSWORD: ttcrypto_password
+      JWT_SECRET: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm123456789
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173,http://frontend:3000
+      WEBSOCKET_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173,http://frontend:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - ttcrypto_network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ttcrypto_frontend
+    environment:
+      VITE_API_URL: http://backend:8080/api/v1
+      VITE_WS_URL: ws://backend:8080/ws/trading
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - ttcrypto_network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  ttcrypto_network:
+    driver: bridge

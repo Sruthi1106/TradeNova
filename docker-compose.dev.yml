@@ -1,0 +1,127 @@
+version: '3.9'
+
+# Local Development Environment
+# This file sets up the full stack locally with local MySQL
+# Usage: docker-compose up
+
+services:
+  # MySQL Database (Local Development)
+  mysql:
+    image: mysql:8.0
+    container_name: ttcrypto-mysql-local
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: ttcrypto_db
+      MYSQL_USER: ttcrypto
+      MYSQL_PASSWORD: ttcrypto_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/aiven_schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ttcrypto-dev
+    restart: unless-stopped
+
+  # PHP MyAdmin (Database GUI)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: ttcrypto-phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: ttcrypto
+      PMA_PASSWORD: ttcrypto_pass
+      PMA_PORT: 3306
+    ports:
+      - "8081:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - ttcrypto-dev
+    restart: unless-stopped
+
+  # Spring Boot Backend (Local)
+  backend:
+    image: ttcrypto-backend:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ttcrypto-backend-local
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ttcrypto_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ttcrypto
+      SPRING_DATASOURCE_PASSWORD: ttcrypto_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: false
+      LOGGING_LEVEL_COM_TTCRYPTO: DEBUG
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+      JVM_OPTS: "-Xmx256m -Xms128m"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ttcrypto-dev
+    restart: unless-stopped
+
+  # React Frontend (Local)
+  frontend:
+    image: ttcrypto-frontend:dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: ttcrypto-frontend-local
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8080/api/v1
+      VITE_WS_URL: ws://localhost:8080/ws/trading
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    networks:
+      - ttcrypto-dev
+    restart: unless-stopped
+
+  # Redis (Optional - for caching)
+  redis:
+    image: redis:7-alpine
+    container_name: ttcrypto-redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=redis_dev_password
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - ttcrypto-dev
+    restart: unless-stopped
+    profiles:
+      - with-redis
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  ttcrypto-dev:
+    driver: bridge
