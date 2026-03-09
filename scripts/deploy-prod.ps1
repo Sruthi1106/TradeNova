@@ -19,6 +19,31 @@ if (-not $docker) {
   exit 1
 }
 
+$composeCmd = @($docker.Source, 'compose')
+try {
+  & $docker.Source compose version | Out-Null
+} catch {
+  $composePath = "C:\Program Files\Docker\Docker\resources\bin\docker-compose.exe"
+  if (-not (Test-Path $composePath)) {
+    $composePath = "C:\Program Files\Docker\Docker\resources\bin\docker-compose"
+  }
+  if (-not (Test-Path $composePath)) {
+    Write-Host "Neither 'docker compose' nor 'docker-compose' is available." -ForegroundColor Red
+    exit 1
+  }
+  $composeCmd = @($composePath)
+}
+
+function Invoke-Compose {
+  param([string[]]$Args)
+
+  if ($composeCmd.Length -gt 1) {
+    & $composeCmd[0] $composeCmd[1] @Args
+  } else {
+    & $composeCmd[0] @Args
+  }
+}
+
 if (-not (Test-Path ".env.prod")) {
   Copy-Item ".env.prod.example" ".env.prod"
   Write-Host "Created .env.prod from template. Fill it and rerun this script." -ForegroundColor Yellow
@@ -26,10 +51,10 @@ if (-not (Test-Path ".env.prod")) {
 }
 
 if ($Build) {
-  & $docker.Source compose -f docker-compose.prod.yml --env-file .env.prod build backend
+  Invoke-Compose -Args @('-f', 'docker-compose.prod.yml', '--env-file', '.env.prod', 'build', 'backend')
 }
 
-& $docker.Source compose -f docker-compose.prod.yml --env-file .env.prod up -d backend
+Invoke-Compose -Args @('-f', 'docker-compose.prod.yml', '--env-file', '.env.prod', 'up', '-d', 'backend')
 
 Write-Host "Backend deployed. Checking health..." -ForegroundColor Cyan
 Start-Sleep -Seconds 5

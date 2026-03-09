@@ -14,11 +14,36 @@ if (-not $docker) {
   exit 0
 }
 
+$composeCmd = @($docker.Source, 'compose')
+try {
+  & $docker.Source compose version | Out-Null
+} catch {
+  $composePath = "C:\Program Files\Docker\Docker\resources\bin\docker-compose.exe"
+  if (-not (Test-Path $composePath)) {
+    $composePath = "C:\Program Files\Docker\Docker\resources\bin\docker-compose"
+  }
+  if (-not (Test-Path $composePath)) {
+    Write-Host "Compose runtime not found. Nothing to stop." -ForegroundColor Yellow
+    exit 0
+  }
+  $composeCmd = @($composePath)
+}
+
+function Invoke-Compose {
+  param([string[]]$Args)
+
+  if ($composeCmd.Length -gt 1) {
+    & $composeCmd[0] $composeCmd[1] @Args
+  } else {
+    & $composeCmd[0] @Args
+  }
+}
+
 if (-not (Test-Path ".env.prod")) {
   Write-Host ".env.prod not found. Using compose defaults." -ForegroundColor Yellow
-  & $docker.Source compose -f docker-compose.prod.yml down
+  Invoke-Compose -Args @('-f', 'docker-compose.prod.yml', 'down')
   exit 0
 }
 
-& $docker.Source compose -f docker-compose.prod.yml --env-file .env.prod down
+Invoke-Compose -Args @('-f', 'docker-compose.prod.yml', '--env-file', '.env.prod', 'down')
 Write-Host "Production backend stopped." -ForegroundColor Green
