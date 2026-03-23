@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-const CandlestickChart = ({ data, interval = '1h' }) => {
+const CandlestickChart = ({ data, interval = '1h', livePrice }) => {
   const containerRef = useRef(null)
   const [size, setSize] = useState({ width: 900, height: 450 })
   const [hoverIndex, setHoverIndex] = useState(null)
@@ -64,8 +64,11 @@ const CandlestickChart = ({ data, interval = '1h' }) => {
   const domainMin = minPrice - padding
   const domainMax = maxPrice + padding
 
-  // Use only the latest candle for current price marker.
-  const currentPrice = chartData[chartData.length - 1]?.close || maxPrice
+  // Prefer live ticker price for marker; fallback to latest candle close.
+  const parsedLivePrice = Number(livePrice)
+  const currentPrice = Number.isFinite(parsedLivePrice)
+    ? parsedLivePrice
+    : chartData[chartData.length - 1]?.close || maxPrice
 
   const margin = { top: 14, right: 84, bottom: 28, left: 14 }
   const plotWidth = Math.max(10, size.width - margin.left - margin.right)

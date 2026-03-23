@@ -16,7 +16,7 @@ services:
       JVM_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
       JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF-8"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/api/v1/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 3

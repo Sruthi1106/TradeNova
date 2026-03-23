@@ -143,7 +143,7 @@ const TradingPage = () => {
               {loading ? (
                 <div className="h-full rounded-xl border border-dark-600/40 bg-dark-800/20" />
               ) : (
-                <CandlestickChart data={candlesticks} interval={interval} />
+                <CandlestickChart data={candlesticks} interval={interval} livePrice={priceData?.price} />
               )}
             </div>
           </section>

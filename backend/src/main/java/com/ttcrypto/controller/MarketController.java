@@ -73,7 +73,7 @@ public class MarketController {
         log.info("Fetching supported trading pairs");
         return ResponseEntity.ok(new Object() {
             public final String[] pairs = {
-                    "BTC/USDT", "ETH/USDT", "BNB/USDT", "XRP/USDT", "ADA/USDT"
+                    "BTC/USDT", "ETH/USDT", "BNB/USDT", "XRP/USDT", "ADA/USDT", "SOL/USDT"
             };
         });
     }

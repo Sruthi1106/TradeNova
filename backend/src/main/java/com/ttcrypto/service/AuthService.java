@@ -14,8 +14,10 @@ import com.ttcrypto.repository.WalletRepository;
 import com.ttcrypto.security.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -84,18 +86,32 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        String identifier = request.getIdentifier().trim();
+        String identifier = request == null ? null : request.getIdentifier();
+        if (identifier == null || identifier.trim().isEmpty()) {
+            throw new BadCredentialsException("Identifier is required");
+        }
+        String normalizedIdentifier = identifier.trim();
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                identifier,
-                        request.getPassword()
-                )
-        );
+        String password = request.getPassword();
+        if (password == null || password.isBlank()) {
+            throw new BadCredentialsException("Password is required");
+        }
+
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            normalizedIdentifier,
+                            password
+                    )
+            );
+        } catch (AuthenticationException ex) {
+            throw new BadCredentialsException("Invalid username/email or password", ex);
+        }
 
         String token = jwtTokenProvider.generateToken(authentication);
-        User user = userRepository.findByUsername(identifier)
-            .orElseGet(() -> userRepository.findByEmail(identifier)
+        User user = userRepository.findByUsername(normalizedIdentifier)
+            .orElseGet(() -> userRepository.findByEmail(normalizedIdentifier)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found")));
 
         log.info("User logged in successfully: {}", user.getUsername());
