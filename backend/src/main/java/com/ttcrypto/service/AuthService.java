@@ -14,6 +14,7 @@ import com.ttcrypto.repository.WalletRepository;
 import com.ttcrypto.security.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -46,6 +47,9 @@ public class AuthService {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Value("${app.registration.initialize-wallets:false}")
+    private boolean initializeWallets;
+
     public UserDto register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email already registered: " + request.getEmail());
@@ -70,17 +74,21 @@ public class AuthService {
         User savedUser = userRepository.save(user);
         log.info("User registered successfully: {}", savedUser.getUsername());
 
-        // Initialize wallets for common cryptocurrencies
-        List<String> defaultCurrencies = Arrays.asList("USDT", "BTC", "ETH", "BNB", "XRP");
-        defaultCurrencies.forEach(currency -> {
-            Wallet wallet = Wallet.builder()
-                    .user(savedUser)
-                    .currency(currency)
-                    .balance(currency.equals("USDT") ? new BigDecimal("10000.00") : BigDecimal.ZERO)
-                    .lockedBalance(BigDecimal.ZERO)
-                    .build();
-            walletRepository.save(wallet);
-        });
+        if (initializeWallets) {
+            // Best effort wallet bootstrap for new accounts.
+            List<String> defaultCurrencies = Arrays.asList("USDT", "BTC", "ETH", "BNB", "XRP");
+            defaultCurrencies.forEach(currency -> {
+                Wallet wallet = Wallet.builder()
+                        .user(savedUser)
+                        .currency(currency)
+                        .balance(currency.equals("USDT") ? new BigDecimal("10000.00") : BigDecimal.ZERO)
+                        .lockedBalance(BigDecimal.ZERO)
+                        .build();
+                walletRepository.save(wallet);
+            });
+        } else {
+            log.warn("Wallet initialization disabled. User created without default wallets: {}", savedUser.getUsername());
+        }
 
         return mapUserToDto(savedUser);
     }

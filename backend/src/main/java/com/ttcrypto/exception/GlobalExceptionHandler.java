@@ -1,6 +1,8 @@
 package com.ttcrypto.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -122,6 +124,34 @@ public class GlobalExceptionHandler {
                 .build();
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
+
+        @ExceptionHandler(DataIntegrityViolationException.class)
+        public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+                        DataIntegrityViolationException ex, WebRequest request) {
+                log.error("Database integrity violation", ex);
+                ErrorResponse response = ErrorResponse.builder()
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.CONFLICT.value())
+                                .error("Database Conflict")
+                                .message("Unable to complete request due to data conflict")
+                                .path(request.getDescription(false).replace("uri=", ""))
+                                .build();
+                return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+        }
+
+        @ExceptionHandler(DataAccessException.class)
+        public ResponseEntity<ErrorResponse> handleDataAccessException(
+                        DataAccessException ex, WebRequest request) {
+                log.error("Database access error", ex);
+                ErrorResponse response = ErrorResponse.builder()
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                .error("Database Error")
+                                .message("Database operation failed")
+                                .path(request.getDescription(false).replace("uri=", ""))
+                                .build();
+                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(

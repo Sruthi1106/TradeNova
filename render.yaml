@@ -14,7 +14,7 @@ services:
       - key: SERVER_SERVLET_CONTEXT_PATH
         value: /api/v1
       - key: SPRING_JPA_HIBERNATE_DDL_AUTO
-        value: validate
+        value: update
       - key: SPRING_DATASOURCE_URL
         sync: false
       - key: SPRING_DATASOURCE_USERNAME
@@ -23,8 +23,12 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: APP_REGISTRATION_INITIALIZE_WALLETS
+        value: "false"
       - key: SPRING_WEB_CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://trade-nova-orpin.vercel.app,https://sruthia05.vercel.app,https://ttcrypto-frontend.onrender.com
+      - key: SPRING_WEB_CORS_ALLOW_CREDENTIALS
+        value: "false"
       - key: SPRING_WEBSOCKET_ALLOWED_ORIGINS
         sync: false
 

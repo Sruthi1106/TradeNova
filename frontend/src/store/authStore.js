@@ -34,13 +34,25 @@ export const useAuthStore = create(
           return { success: true }
         } catch (error) {
           const validationErrors = error.response?.data?.validationErrors
-          let message = error.response?.data?.message || 'Registration failed'
+          const status = error.response?.status
+          const backendMessage =
+            typeof error.response?.data === 'string'
+              ? error.response.data
+              : error.response?.data?.message
+
+          let message = backendMessage || 'Registration failed'
 
           if (validationErrors && typeof validationErrors === 'object') {
             const firstValidationError = Object.values(validationErrors)[0]
             if (typeof firstValidationError === 'string') {
               message = firstValidationError
             }
+          }
+
+          if (!error.response) {
+            message = 'Cannot reach server. Please try again.'
+          } else if (!validationErrors && !backendMessage && status) {
+            message = `Registration failed (HTTP ${status})`
           }
 
           set({ error: message, loading: false })
