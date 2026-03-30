@@ -41,7 +41,6 @@ public class MarketDataService {
     @Autowired
     private OrderRepository orderRepository;
 
-    private static final String BINANCE_BASE_URL = "https://api.binance.com/api/v3";
     private static final String COINBASE_BASE_URL = "https://api.coinbase.com/v2";
     private static final long PRICE_CACHE_TTL_MS = 2000L;
     private static final BigDecimal DEFAULT_PRICE = new BigDecimal("100.00");
@@ -52,6 +51,9 @@ public class MarketDataService {
 
     @Value("${market.api.insecure-trust-all:false}")
     private boolean insecureTrustAll;
+
+    @Value("${market.api.binance-base-url:https://api.binance.com/api/v3}")
+    private String binanceBaseUrl;
 
     private HttpClient httpClient;
 
@@ -139,7 +141,7 @@ public class MarketDataService {
 
         try {
             String symbol = toBinanceSymbol(tradingPair);
-            String endpoint = BINANCE_BASE_URL + "/klines?symbol=" + symbol
+                String endpoint = binanceBaseUrl + "/klines?symbol=" + symbol
                     + "&interval=" + normalizeInterval(interval)
                     + "&limit=" + safeLimit;
 
@@ -182,7 +184,7 @@ public class MarketDataService {
     public PriceTickDto getPriceTick(String tradingPair) {
         try {
             String symbol = toBinanceSymbol(tradingPair);
-            String endpoint = BINANCE_BASE_URL + "/ticker/bookTicker?symbol=" + symbol;
+            String endpoint = binanceBaseUrl + "/ticker/bookTicker?symbol=" + symbol;
             JsonNode root = performGet(endpoint);
 
             if (root != null && root.hasNonNull("bidPrice") && root.hasNonNull("askPrice")) {
@@ -251,7 +253,7 @@ public class MarketDataService {
     private boolean refreshPriceFromExchange(String tradingPair) {
         try {
             String symbol = toBinanceSymbol(tradingPair);
-            String endpoint = BINANCE_BASE_URL + "/ticker/price?symbol=" + symbol;
+            String endpoint = binanceBaseUrl + "/ticker/price?symbol=" + symbol;
             JsonNode root = performGet(endpoint);
             if (root != null && root.hasNonNull("price")) {
                 BigDecimal price = new BigDecimal(root.get("price").asText()).setScale(2, RoundingMode.HALF_UP);
@@ -285,7 +287,7 @@ public class MarketDataService {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            if (response.statusCode() == 403) {
+            if (response.statusCode() == 403 || response.statusCode() == 451) {
                 log.debug("External API returned status {} for {}", response.statusCode(), url);
             } else {
                 log.warn("External API returned status {} for {}", response.statusCode(), url);
