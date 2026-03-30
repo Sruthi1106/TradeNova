@@ -143,11 +143,17 @@ public class GlobalExceptionHandler {
         public ResponseEntity<ErrorResponse> handleDataAccessException(
                         DataAccessException ex, WebRequest request) {
                 log.error("Database access error", ex);
+                String specificMessage = ex.getMostSpecificCause() != null
+                        ? ex.getMostSpecificCause().getMessage()
+                        : ex.getMessage();
+                String message = (specificMessage == null || specificMessage.isBlank())
+                        ? "Database operation failed"
+                        : "Database operation failed: " + specificMessage;
                 ErrorResponse response = ErrorResponse.builder()
                                 .timestamp(LocalDateTime.now())
                                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                                 .error("Database Error")
-                                .message("Database operation failed")
+                        .message(message)
                                 .path(request.getDescription(false).replace("uri=", ""))
                                 .build();
                 return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);

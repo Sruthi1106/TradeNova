@@ -15,6 +15,7 @@ import com.ttcrypto.security.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -51,14 +52,6 @@ public class AuthService {
     private boolean initializeWallets;
 
     public UserDto register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("Email already registered: " + request.getEmail());
-        }
-
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new DuplicateResourceException("Username already taken: " + request.getUsername());
-        }
-
         User user = User.builder()
                 .email(request.getEmail())
                 .username(request.getUsername())
@@ -71,7 +64,24 @@ public class AuthService {
                 .isActive(true)
                 .build();
 
-        User savedUser = userRepository.save(user);
+        User savedUser;
+        try {
+            savedUser = userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException ex) {
+            String msg = ex.getMostSpecificCause() != null
+                    ? ex.getMostSpecificCause().getMessage()
+                    : ex.getMessage();
+            String normalized = msg == null ? "" : msg.toLowerCase();
+
+            if (normalized.contains("email")) {
+                throw new DuplicateResourceException("Email already registered: " + request.getEmail());
+            }
+            if (normalized.contains("username")) {
+                throw new DuplicateResourceException("Username already taken: " + request.getUsername());
+            }
+            throw ex;
+        }
+
         log.info("User registered successfully: {}", savedUser.getUsername());
 
         if (initializeWallets) {
